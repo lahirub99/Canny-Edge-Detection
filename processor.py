@@ -31,11 +31,11 @@ width, height, channels = image_rgb.shape
 # Convert to grayscale
 def graysclale():
     image_gray = [[[0 for k in range(3)] 
-                    for j in range(width)] 
-                    for i in range(height)]
+                    for j in range(height)] 
+                    for i in range(width)]
 
-    for i in range(height):
-        for j in range(width):
+    for i in range(width):
+        for j in range(height):
             # Extracting the RGB values
             r, g, b = image_rgb[i][j]
             # Converting to grayscale considering the Luminance level as it was widely use than others in as in YUV and YCrCb formats
@@ -62,7 +62,7 @@ def gaussian_kernel(size, sigma=1):
     g =  np.exp(-((x**2 + y**2) / (2.0*sigma**2))) * normal
     return g
 
-image_smooth = convolve(image_gray, gaussian_kernel(5, sigma=1))
+image_smooth = convolve(image_gray, gaussian_kernel(5, sigma=1.4))
 save_image('smooth.jpg', image_smooth, gray=True)
 
 
@@ -84,12 +84,12 @@ save_image('gradientCalc.jpg', image_gradientCalc, gray=True)
 
 
 def non_max_suppression(img, D):
-    Z = np.zeros((height, width), dtype=np.int32)
+    Z = np.zeros((width, height), dtype=np.int32)
     angle = D * 180. / np.pi
     angle[angle < 0] += 180
     
-    for i in range(1,height-1):
-        for j in range(1,width-1):
+    for i in range(1,width-1):
+        for j in range(1,height-1): 
             try:
                 q = 255
                 r = 255
@@ -123,3 +123,45 @@ def non_max_suppression(img, D):
 
 image_suppression = non_max_suppression(image_gradientCalc, theta)
 save_image('suppression.jpg', image_suppression, gray=True)
+
+def threshold(img, lowThresholdRatio=0.05, highThresholdRatio=0.09):
+    
+    highThreshold = img.max() * highThresholdRatio;
+    lowThreshold = highThreshold * lowThresholdRatio;
+    
+    res = np.zeros((width, height), dtype=np.int32)
+    
+    weak = np.int32(25)
+    strong = np.int32(255)
+    
+    strong_i, strong_j = np.where(img >= highThreshold)
+    zeros_i, zeros_j = np.where(img < lowThreshold)
+    
+    weak_i, weak_j = np.where((img <= highThreshold) & (img >= lowThreshold))
+    
+    res[strong_i, strong_j] = strong
+    res[weak_i, weak_j] = weak
+    
+    return (res, weak, strong)
+
+image_threshold, weak, strong = threshold(image_suppression)
+save_image('threshold.jpg', image_threshold, gray=True)
+
+'''Transform weak pixels into strong ones only if at least one of the pixels around the one being processed is a strong one, based on the threshold results.'''
+def hysteresis(img, weak, strong=255):
+    for i in range(1, width-1):
+        for j in range(1, height-1):
+            if (img[i,j] == weak):
+                try:
+                    if ((img[i+1, j-1] == strong) or (img[i+1, j] == strong) or (img[i+1, j+1] == strong)
+                        or (img[i, j-1] == strong) or (img[i, j+1] == strong)
+                        or (img[i-1, j-1] == strong) or (img[i-1, j] == strong) or (img[i-1, j+1] == strong)):
+                        img[i, j] = strong
+                    else:
+                        img[i, j] = 0
+                except IndexError as e:
+                    pass
+    return img
+
+image_final = hysteresis(image_threshold, weak, strong)
+save_image('final.jpg', image_final, gray=True)
