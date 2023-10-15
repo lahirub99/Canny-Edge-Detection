@@ -55,12 +55,16 @@ def convolve(image, kernel):
     Applies a convolution operation to the input image using the given kernel.
     
     Args:
-    image: numpy array representing the input image
+    image: numpy array or list representing the input image
     kernel: numpy array representing the convolution kernel
     
     Returns:
     numpy array representing the convolved image
     """
+    
+    # Convert the image to a numpy array if it is a list
+    if isinstance(image, list):
+        image = np.array(image)
     
     # Get the dimensions of the image and kernel
     image_height, image_width = image.shape
@@ -83,6 +87,24 @@ def convolve(image, kernel):
             output[i, j] = np.sum(kernel * padded_image[i:i+kernel_height, j:j+kernel_width])
     
     return output
+    
+    # # Calculate the padding needed for the convolution operation
+    # pad_height = kernel_height // 2
+    # pad_width = kernel_width // 2
+    
+    # # Create a padded version of the image
+    # padded_image = np.zeros((image_height + 2*pad_height, image_width + 2*pad_width))
+    # padded_image[pad_height:-pad_height, pad_width:-pad_width] = image
+    
+    # # Create an output array to hold the convolved image
+    # output = np.zeros_like(image)
+    
+    # # Apply the convolution operation
+    # for i in range(image_height):
+    #     for j in range(image_width):
+    #         output[i, j] = np.sum(kernel * padded_image[i:i+kernel_height, j:j+kernel_width])
+    
+    # return output
 
 
 def gaussian_kernel(size, sigma=1):
