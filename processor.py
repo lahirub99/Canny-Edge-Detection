@@ -87,7 +87,6 @@ def non_max_suppression(img, D):
     Z = np.zeros((height, width), dtype=np.int32)
     angle = D * 180. / np.pi
     angle[angle < 0] += 180
-
     
     for i in range(1,height-1):
         for j in range(1,width-1):
